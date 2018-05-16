@@ -1,17 +1,24 @@
 import pygame
 from pygame.locals import *
 from random import randrange
+from math import ceil
 
 class Playable:
     """
     Abstract class, represents both paddles and the ball.
     """
-    
+
     def __init__(self, image, pos, color, screen_dim):
         self.image = image
         self.pos = pos
         self.color = color
         self.screen_dim = screen_dim
+
+    def getRect(self):
+        return self.rect
+    
+    def setRect(self, new_rect):
+        self.rect = new_rect
 
 
 class Paddle(Playable):
@@ -19,15 +26,17 @@ class Paddle(Playable):
     Paddles controlled by the player.
     As a player scores, the paddles' height gets smaller.
     """
-    
+
     def __init__(self, image, pos, color, screen_dim, height, y_speed):
         super().__init__(image, pos, color, screen_dim)
         self.Y_SPEED = y_speed
         self.y_speed = y_speed
         self.HEIGHT = height
         self.height = height
-        self.width = 15
+        self.WIDTH = 15
 
+    def getHeight2(self): pass
+    
     def stopMovement(self):
         self.y_speed = 0
 
@@ -36,13 +45,13 @@ class Paddle(Playable):
 
     def resetHeight(self):
         self.height = self.HEIGHT
-    
+
     def willPassWall(self, top=False, bottom=False):
         if top:
             return self.pos[1] - 1 < 0
         if bottom:
             return (self.pos[1] + self.height + 1) > self.screen_dim[1]
-    
+
 
 class Ball(Playable):
     """
@@ -57,14 +66,15 @@ class Ball(Playable):
         self.size = size
         self.POS = pos
         self.pos = pos
-        self.SPEED = speed
+        self.SPEED = tuple(speed)
         self.speed = speed
-
+        
     def resetPos(self):
         self.pos = self.POS
-    
+
     def resetSpeed(self):
-        self.speed = self.SPEED
+        self.speed = list(self.SPEED)
+        print(self.SPEED)
 
     def willPassWall(self, top=False, bottom=False, left=False, right=False):
         if top:
@@ -75,7 +85,7 @@ class Ball(Playable):
         if left:
             return (self.pos[0] - 1) < 0
         if right:
-            return (self.pos[0] + self.size + 1) > self.screen_dim[0]           
+            return (self.pos[0] + self.size + 1) > self.screen_dim[0]
 
 
 class Message:
@@ -106,11 +116,11 @@ class Scoreboard(Message):
         super().__init__(str(score), font_family, font_size, color, pos,
                          bold, italic)
         self._score = score
-        self.max_score = max_score    
+        self.max_score = max_score
 
     def getScore(self):
         return self._score
-    
+
     def score(self):
         self._score += 1
         self.message = str(self.getScore())
@@ -122,8 +132,7 @@ class Scoreboard(Message):
         self._score = 0
         self.message = str(self.getScore())
 
-#################################################################################
-#objects creation and initializing
+##########################################objects creation and initializing
 
 pygame.init()
 
@@ -155,9 +164,9 @@ ball = Ball(img, (400, 300), (255, 255, 255),
             screen.get_size(), 15, [500, 350])
 
 #SCOREBOARDS
-scoreboard1 = Scoreboard("tlwgtypewriter", 130, paddle1.color,
+scoreboard1 = Scoreboard("ubuntumono", 130, paddle1.color,
                          (285, 0), bold=True)
-scoreboard2 = Scoreboard("tlwgtypewriter", 130, paddle2.color,
+scoreboard2 = Scoreboard("ubuntumono", 130, paddle2.color,
                          (445, 0), bold=True)
 
 scoreboard1.font = pygame.font.SysFont(scoreboard1.font_family,
@@ -170,7 +179,7 @@ scoreboard2.font = pygame.font.SysFont(scoreboard2.font_family,
                                         scoreboard2.italic)
 
 #PLAY MESSAGE
-play_msg = Message("Press   Spacebar", "tlwgtypewriter",
+play_msg = Message("Press      Spacebar", "ubuntumono",
                     50, (255, 255, 255), (200, 400), bold=True)
 play_msg.font = pygame.font.SysFont(play_msg.font_family,
                                     play_msg.font_size,
@@ -189,15 +198,15 @@ while True:
     paddle2.resetHeight()
 
     scoreboard1.pos = (285, 0)
-    
+
     scoreboard1.resetScore()
     scoreboard2.resetScore()
 
     scoreboard1.surface = scoreboard1.font.render(scoreboard1.message,
-                                                  True, scoreboard1.color) 
+                                                  True, scoreboard1.color)
     scoreboard2.surface = scoreboard2.font.render(scoreboard2.message,
-                                                  True, scoreboard2.color)     
-    
+                                                  True, scoreboard2.color)
+
     ball.resetPos()
     ball.resetSpeed()
 
@@ -208,9 +217,9 @@ while True:
 
         #time in seconds
         time_passed = clock.tick(60) / 1000 #60 fps
-        
+
         screen.blit(screen_bg, (0,0))
-        
+
         #PADDLES
         pressed = pygame.key.get_pressed()
         #######1
@@ -218,15 +227,15 @@ while True:
             if paddle1.willPassWall(top=True):
                 paddle1.stopMovement()
             else:
-                paddle1.resetMovement()            
+                paddle1.resetMovement()
             paddle1.pos = (paddle1.pos[0],
                            paddle1.pos[1] - paddle1.y_speed*time_passed)
-            
+
         if pressed[K_z]:
             if paddle1.willPassWall(bottom=True):
                 paddle1.stopMovement()
             else:
-                paddle1.resetMovement()            
+                paddle1.resetMovement()
             paddle1.pos = (paddle1.pos[0],
                            paddle1.pos[1] + paddle1.y_speed*time_passed)
 
@@ -245,7 +254,7 @@ while True:
                 paddle2.stopMovement()
             else:
                 paddle2.resetMovement()
-                
+
             paddle2.pos = (paddle2.pos[0],
                            paddle2.pos[1] + paddle2.y_speed*time_passed)
 
@@ -258,20 +267,20 @@ while True:
         #PLAYER MSG
         if msg:
             screen.blit(play_msg.surface, play_msg.pos)
-            
+
             if event.type == KEYDOWN and event.key == K_SPACE:
                 msg = False
 
         #VICTORY
         if scoreboard1.reachedMaxScore() or scoreboard2.reachedMaxScore():
             if scoreboard1.reachedMaxScore():
-                win_msg = Message("WIN", "tlwgtypewriter", 80,
-                                  paddle1.color, (200, 250), bold=True)
+                win_msg = Message("WIN", "ubuntumono", 80,
+                                  paddle2.color, (530, 250), bold=True)
                 scoreboard1.pos = (215, 0)
             else:
-                win_msg = Message("WIN", "tlwgtypewriter", 80,
-                                  paddle2.color, (530, 250), bold=True)
-                
+                win_msg = Message("WIN", "ubuntumono", 80,
+                                  paddle1.color, (200, 250), bold=True)
+
             win_msg.font = pygame.font.SysFont(win_msg.font_family,
                                                win_msg.font_size,
                                                win_msg.bold,
@@ -285,47 +294,64 @@ while True:
 
             if event.type == KEYDOWN and event.key == K_SPACE:
                 win = True
-                
+
 
         #BALL
         elif not msg:
-            
+
+            ball_rect = pygame.Rect(ball.pos, (ball.size, ball.size))
+            paddle1_rect = pygame.Rect(paddle1.pos, (paddle1.WIDTH, paddle1.height))
+            paddle2_rect = pygame.Rect(paddle2.pos, (paddle2.WIDTH, paddle2.height))
+
+            ball.setRect(ball_rect)
+            paddle1.setRect(paddle1_rect)
+            paddle2.setRect(paddle2_rect)
+
+##            print((ball_rect.x, ball_rect.y),
+##                  (paddle1_rect.x, paddle1_rect.y),
+##                  (paddle2_rect.x, paddle2_rect.y),
+##                  sep=" -- ")
+
             if ball.willPassWall(top=True) or ball.willPassWall(bottom=True):
                 ball.speed[1] *= -1
 
-            elif round(ball.pos[0]) in \
-                 range(round(paddle1.pos[0]+paddle1.width)-2,
-                       round(paddle1.pos[0]+paddle1.width)+6) \
-                 or round(ball.pos[0] + ball.size) in \
-                       range(round(paddle2.pos[0])-3,
-                             round(paddle2.pos[0])+6):
-                print("pygame idiota")
-                
-               
+            elif ball_rect.colliderect(paddle1_rect) or ball_rect.colliderect(paddle2_rect):
+                ball.speed[0] *= -1
+                ball.speed[0] *= 1.005
+                print(ball.speed)
+
+##            elif round(ball.pos[0]) in \
+##                 range(round(paddle1.pos[0]+paddle1.width)-2,
+##                       round(paddle1.pos[0]+paddle1.width)+6) \
+##                 or round(ball.pos[0] + ball.size) in \
+##                       range(round(paddle2.pos[0])-3,
+##                             round(paddle2.pos[0])+6):
+##                print("pygame idiota")
+
+
             elif ball.willPassWall(left=True) or ball.willPassWall(right=True):
                 if ball.willPassWall(left=True):
-                    scoreboard1.score()
-                    scoreboard1.surface = scoreboard1.font.render(
-                        scoreboard1.message, True, scoreboard1.color)
-                    
-                elif ball.willPassWall(right=True):
                     scoreboard2.score()
                     scoreboard2.surface = scoreboard2.font.render(
                         scoreboard2.message, True, scoreboard2.color)
-                    
+
+                elif ball.willPassWall(right=True):
+                    scoreboard1.score()
+                    scoreboard1.surface = scoreboard1.font.render(
+                        scoreboard1.message, True, scoreboard1.color)
+
                 ball.resetPos()
                 ball.resetSpeed() #mudar depois
-                
-                paddle1.height -= 5
-                paddle1.image = pygame.image.load(
-                    "paddle"+str(paddle1.height)+".png").convert_alpha()
-                paddle2.height -= 5
-                paddle2.image = pygame.image.load(
-                    "paddle"+str(paddle2.height)+".png").convert_alpha()
 
-                print("left right")
-       
-            
+                
+                paddle1.height -= 2.5 
+                paddle1.image = pygame.image.load(
+                    "paddle"+str(ceil(paddle1.height))+".png").convert_alpha()
+                paddle2.height -= 2.5
+                paddle2.image = pygame.image.load(
+                    "paddle"+str(ceil(paddle2.height))+".png").convert_alpha()
+
+
             ball.pos = (ball.pos[0] + ball.speed[0]*time_passed,
                         ball.pos[1] + ball.speed[1]*time_passed)
 
