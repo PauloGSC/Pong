@@ -1,7 +1,13 @@
 import pygame
 from pygame.locals import *
-from random import randrange
 from math import ceil
+from random import randint
+
+####TASKS
+#colisão bola-palheta em 8 pontos
+#reflexão da bola em 8 pontos da palheta
+#sons do jogo
+#trajetória inicial da bola
 
 class Playable:
     """
@@ -35,7 +41,11 @@ class Paddle(Playable):
         self.height = height
         self.WIDTH = 15
 
-    def getHeight2(self): pass
+    def getHeight2(self):
+        return self.height2
+
+    def setHeight2(self, new_height2):
+        self.height2 = new_height2        
     
     def stopMovement(self):
         self.y_speed = 0
@@ -74,7 +84,6 @@ class Ball(Playable):
 
     def resetSpeed(self):
         self.speed = list(self.SPEED)
-        print(self.SPEED)
 
     def willPassWall(self, top=False, bottom=False, left=False, right=False):
         if top:
@@ -132,34 +141,40 @@ class Scoreboard(Message):
         self._score = 0
         self.message = str(self.getScore())
 
-##########################################objects creation and initializing
+#########################################
+#objects creation and initializing
 
 pygame.init()
 
 #CLOCK
 clock = pygame.time.Clock()
 
+#HIDE MOUSE
+pygame.mouse.set_visible(False)
+
 #BACKGROUND AND SCREEN
 screen = pygame.display.set_mode((800, 600), 0, 32)
-screen_bg = pygame.image.load("background.png").convert()
+screen_bg = pygame.image.load("Images/background.png").convert()
 pygame.display.set_caption("PONG")
 
 #PADDLES
-p1_color = (randrange(50, 256), randrange(50, 256), randrange(50, 256))
+p1_color = (randint(50, 255), randint(50, 255), randint(50, 255))
 while True:
-    p2_color = (randrange(50, 256), randrange(50, 256), randrange(50, 256))
+    p2_color = (randint(50, 255), randint(50, 255), randint(50, 255))
     if abs(p1_color[0] - p2_color[0]) >= 50\
        and abs(p1_color[1] - p2_color[1]) >= 50\
        and abs(p1_color[2] - p2_color[2]) >= 50:
         break
 
-paddle1 = Paddle(pygame.image.load("paddle100.png").convert_alpha(),
+print(p1_color, p2_color, sep=" -- ")
+
+paddle1 = Paddle(pygame.image.load("Images/paddle100.png").convert_alpha(),
                  (50, 10), p1_color, screen.get_size(), 100, 850)
-paddle2 = Paddle(pygame.image.load("paddle100.png").convert_alpha(),
+paddle2 = Paddle(pygame.image.load("Images/paddle100.png").convert_alpha(),
                  (735, 10), p2_color, screen.get_size(), 100, 850)
 
 #BALL
-img = pygame.image.load("ball.png").convert_alpha()
+img = pygame.image.load("Images/ball.png").convert_alpha()
 ball = Ball(img, (400, 300), (255, 255, 255),
             screen.get_size(), 15, [500, 350])
 
@@ -187,14 +202,14 @@ play_msg.font = pygame.font.SysFont(play_msg.font_family,
 play_msg.surface = play_msg.font.render(play_msg.message,
                                         True, play_msg.color)
 
-#main loop
+#main loops
 while True:
     msg = True
     win = False
 
-    paddle1.image = pygame.image.load("paddle100.png").convert_alpha()
+    paddle1.image = pygame.image.load("Images/paddle100.png").convert_alpha()
     paddle1.resetHeight()
-    paddle2.image = pygame.image.load("paddle100.png").convert_alpha()
+    paddle2.image = pygame.image.load("Images/paddle100.png").convert_alpha()
     paddle2.resetHeight()
 
     scoreboard1.pos = (285, 0)
@@ -264,7 +279,7 @@ while True:
         screen.blit(paddle1.image, paddle1.pos)
         screen.blit(paddle2.image, paddle2.pos)
 
-        #PLAYER MSG
+        #PLAY MSG
         if msg:
             screen.blit(play_msg.surface, play_msg.pos)
 
@@ -274,12 +289,12 @@ while True:
         #VICTORY
         if scoreboard1.reachedMaxScore() or scoreboard2.reachedMaxScore():
             if scoreboard1.reachedMaxScore():
-                win_msg = Message("WIN", "ubuntumono", 80,
-                                  paddle2.color, (530, 250), bold=True)
+                win_msg = Message("WIN", "ubuntumono", 90,
+                                  paddle1.color, (200, 250), bold=True)
                 scoreboard1.pos = (215, 0)
             else:
-                win_msg = Message("WIN", "ubuntumono", 80,
-                                  paddle1.color, (200, 250), bold=True)
+                win_msg = Message("WIN", "ubuntumono", 90,
+                                  paddle2.color, (530, 250), bold=True)
 
             win_msg.font = pygame.font.SysFont(win_msg.font_family,
                                                win_msg.font_size,
@@ -293,6 +308,7 @@ while True:
             msg = True
 
             if event.type == KEYDOWN and event.key == K_SPACE:
+                print("-"*10)
                 win = True
 
 
@@ -300,34 +316,25 @@ while True:
         elif not msg:
 
             ball_rect = pygame.Rect(ball.pos, (ball.size, ball.size))
-            paddle1_rect = pygame.Rect(paddle1.pos, (paddle1.WIDTH, paddle1.height))
-            paddle2_rect = pygame.Rect(paddle2.pos, (paddle2.WIDTH, paddle2.height))
+            paddle1_rect = pygame.Rect(paddle1.pos,
+                                       (paddle1.WIDTH, paddle1.height))
+            paddle2_rect = pygame.Rect(paddle2.pos,
+                                       (paddle2.WIDTH, paddle2.height))
 
             ball.setRect(ball_rect)
             paddle1.setRect(paddle1_rect)
             paddle2.setRect(paddle2_rect)
 
-##            print((ball_rect.x, ball_rect.y),
-##                  (paddle1_rect.x, paddle1_rect.y),
-##                  (paddle2_rect.x, paddle2_rect.y),
-##                  sep=" -- ")
-
             if ball.willPassWall(top=True) or ball.willPassWall(bottom=True):
                 ball.speed[1] *= -1
 
-            elif ball_rect.colliderect(paddle1_rect) or ball_rect.colliderect(paddle2_rect):
+            elif ball.getRect().colliderect(paddle1.getRect()) \
+                 or ball.getRect().colliderect(paddle2.getRect()):
                 ball.speed[0] *= -1
-                ball.speed[0] *= 1.005
-                print(ball.speed)
-
-##            elif round(ball.pos[0]) in \
-##                 range(round(paddle1.pos[0]+paddle1.width)-2,
-##                       round(paddle1.pos[0]+paddle1.width)+6) \
-##                 or round(ball.pos[0] + ball.size) in \
-##                       range(round(paddle2.pos[0])-3,
-##                             round(paddle2.pos[0])+6):
-##                print("pygame idiota")
-
+                ball.speed[0] *= 1.05
+                #ball.speed[1] *= -1
+                #if ball_rect.colliderect(paddle1_rect):
+                    
 
             elif ball.willPassWall(left=True) or ball.willPassWall(right=True):
                 if ball.willPassWall(left=True):
@@ -335,21 +342,24 @@ while True:
                     scoreboard2.surface = scoreboard2.font.render(
                         scoreboard2.message, True, scoreboard2.color)
 
-                elif ball.willPassWall(right=True):
+                else:
                     scoreboard1.score()
                     scoreboard1.surface = scoreboard1.font.render(
                         scoreboard1.message, True, scoreboard1.color)
 
                 ball.resetPos()
                 ball.resetSpeed() #mudar depois
-
                 
-                paddle1.height -= 2.5 
-                paddle1.image = pygame.image.load(
-                    "paddle"+str(ceil(paddle1.height))+".png").convert_alpha()
+                paddle1.height -= 2.5
                 paddle2.height -= 2.5
-                paddle2.image = pygame.image.load(
-                    "paddle"+str(ceil(paddle2.height))+".png").convert_alpha()
+                
+                paddle1.setHeight2(ceil(paddle1.height))
+                paddle2.setHeight2(ceil(paddle2.height))
+                
+                paddle1.image = pygame.image.load("Images/"
+                    "paddle"+str(paddle1.getHeight2())+".png").convert_alpha()
+                paddle2.image = pygame.image.load("Images/"
+                    "paddle"+str(paddle2.getHeight2())+".png").convert_alpha()
 
 
             ball.pos = (ball.pos[0] + ball.speed[0]*time_passed,
@@ -362,5 +372,5 @@ while True:
         screen.blit(scoreboard1.surface, scoreboard1.pos)
         screen.blit(scoreboard2.surface, scoreboard2.pos)
 
-        ######UPDATE
+        #UPDATE
         pygame.display.update()
