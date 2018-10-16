@@ -102,7 +102,7 @@ class Ball(Playable):
     """
     Ball used in the game.
     As long as a player doesn't score, the ball's speed increases.
-    increases. When a player scores, it resets to the default speed
+    When a player scores, it resets to the default speed
     and starts increasing again.
     """
 
