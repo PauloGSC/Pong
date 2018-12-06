@@ -1,7 +1,3 @@
-#Programa simulando o jogo Pong, proveniente do videogame Atari.
-#Autor: Paulo Gabriel Sena Comasetto
-#E-mail: paulogscomasetto@gmail.com
-
 from math import ceil
 from random import randint
 import pygame
